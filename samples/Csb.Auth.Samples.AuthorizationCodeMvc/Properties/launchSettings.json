@@ -1,0 +1,13 @@
+﻿{
+  "profiles": {
+    "Csb.Auth.Samples.AuthorizationCodeMvc": {
+      "commandName": "Project",
+      "dotnetRunMessages": "true",
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:5900",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

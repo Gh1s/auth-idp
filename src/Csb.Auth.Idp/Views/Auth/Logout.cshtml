@@ -1,0 +1,33 @@
+﻿@model LogoutViewModel
+
+@inject IViewLocalizer Localizer
+
+@{
+    ViewData["Title"] = Localizer["PageTitle"];
+}
+
+<div class="container" style="max-width: 520px;">
+    <div class="text-center">
+        <img src="~/images/logo_csb.png" class="img-fluid" />
+    </div>
+    <h4 class="mb-3 d-none d-sm-block">@Localizer["Title"]</h4>
+
+    <hr />
+
+    <p>@Localizer["Prompt"]</p>
+    <div class="form-group">
+        <form id="accept-form" asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+            <input type="hidden" asp-for="Challenge" />
+            <input type="hidden" asp-for="Action" value="yes" />
+            <input type="hidden" asp-for="RedictUrl" />
+            <button type="submit" class="btn btn-primary text-white">@Localizer["ButtonYes"]</button>
+        </form>
+        <form id="deny-form" asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+            <input type="hidden" asp-for="Challenge" />
+            <input type="hidden" asp-for="Action" value="no" />
+            <input type="hidden" asp-for="RedictUrl" />
+            <button type="submit" class="btn btn-danger">@Localizer["ButtonNo"]</button>
+        </form>
+    </div>
+</div>
+<div class="background"></div>

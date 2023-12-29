@@ -1,0 +1,68 @@
+﻿@model ErrorViewModel
+
+<div class="container">
+    <div class="alert alert-danger m-3">
+        <h2 class="alert-heading">Error</h2>
+        <hr />
+
+        <div class="table-responsive">
+            <table class="table table-dark table-bordered">
+                <colgroup>
+                    <col style="width: 20%;" />
+                    <col />
+                </colgroup>
+                <tbody>
+                    @if (Model.TraceIdentifier != null)
+                    {
+                        <tr>
+                            <td>Trace identifier</td>
+                            <td>@Model.TraceIdentifier</td>
+                        </tr>
+                    }
+                    @if (Model.Exception != null)
+                    {
+                        <tr>
+                            <td>Exception</td>
+                            <td>@Model.Exception.Message</td>
+                        </tr>
+                    }
+                    @if (Model.ExceptionPath != null)
+                    {
+                        <tr>
+                            <td>Exception path</td>
+                            <td>@Model.ExceptionPath</td>
+                        </tr>
+                    }
+                    @if (Model.Error != null)
+                    {
+                        <tr>
+                            <td>Error</td>
+                            <td>@Model.Error</td>
+                        </tr>
+                    }
+                    @if (Model.ErrorDescription != null)
+                    {
+                        <tr>
+                            <td>Description</td>
+                            <td>@Model.ErrorDescription</td>
+                        </tr>
+                    }
+                    @if (Model.ErrorHint != null)
+                    {
+                        <tr>
+                            <td>Hint</td>
+                            <td>@Model.ErrorHint</td>
+                        </tr>
+                    }
+                    @if (Model.ErrorDebug != null)
+                    {
+                        <tr>
+                            <td>Debug</td>
+                            <td>@Model.ErrorDebug</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

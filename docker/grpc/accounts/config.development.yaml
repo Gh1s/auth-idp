@@ -1,0 +1,6 @@
+﻿logLevel: info
+
+listen:
+  tls:
+    cert: /etc/ssl/certs/tls.crt
+    key: /etc/ssl/certs/tls.key

@@ -1,0 +1,160 @@
+# This script can be used to bootstrap development dependencies.
+
+version: '3.8'
+
+services:
+
+  idp-postgres:
+    image: postgres:13.1
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=idp
+      - POSTGRES_PASSWORD=Pass@word1
+      - POSTGRES_DB=idp
+    volumes:
+      - type: bind
+        source: ./postgres/init_schema.sql
+        target: /docker-entrypoint-initdb.d/init_schema.sql
+    restart: unless-stopped
+    networks:
+      - intranet
+
+  hydra-migrate:
+    image: oryd/hydra:v1.9.2
+    command:
+      migrate -c /etc/config/hydra/config.yaml sql -e --yes
+    volumes:
+      - type: bind
+        source: ./hydra
+        target: /etc/config/hydra
+    environment:
+      - DSN=postgres://idp:Pass@word1@idp-postgres:5432/idp?search_path=hydra&sslmode=disable&max_conns=20&max_idle_conns=4
+    restart: on-failure
+    depends_on:
+      - idp-postgres
+    networks:
+      - intranet
+
+  hydra-public:
+    image: oryd/hydra:v1.9.2
+    command:
+      # Don't do this in production!
+      serve -c /etc/config/hydra/config.yaml public --dangerous-force-http
+    volumes:
+      - type: bind
+        source: ./hydra
+        target: /etc/config/hydra
+    environment:
+      - DSN=postgres://idp:Pass@word1@idp-postgres:5432/idp?search_path=hydra&sslmode=disable&max_conns=20&max_idle_conns=4
+    restart: unless-stopped
+    depends_on:
+      - hydra-migrate
+    networks:
+      - intranet
+
+  hydra-admin:
+    image: oryd/hydra:v1.9.2
+    ports:
+      - "4445:4445"  
+    command:
+      # Don't do this in production!
+      serve -c /etc/config/hydra/config.yaml admin --dangerous-force-http
+    volumes:
+      - type: bind
+        source: ./hydra
+        target: /etc/config/hydra
+    environment:
+      - DSN=postgres://idp:Pass@word1@idp-postgres:5432/idp?search_path=hydra&sslmode=disable&max_conns=20&max_idle_conns=4
+    restart: unless-stopped
+    depends_on:
+      - hydra-migrate
+    networks:
+      - intranet
+
+  hydra-init-client1:
+    image: curlimages/curl
+    command:
+      - "-XPOST"
+      - "-d"
+      - "{\"client_id\":\"test_authorization_code\",\"client_name\":\"Test with authorization_code flow\",\"client_secret\":\"secret\",\"client_secret_expires_at\":0,\"grant_types\":[\"client_credentials\",\"authorization_code\"],\"scope\":\"openid profile email phone_number offline_access\",\"audience\":[\"test\"],\"frontchannel_logout_uri\":\"https://localhost:5900/frontchannel-logout\",\"frontchannel_logout_session_required\":true,\"backchannel_logout_uri\":\"https://localhost:5900/backchannel-logout\",\"backchannel_logout_session_required\":true,\"token_endpoint_auth_method\":\"client_secret_post\",\"response_types\":[\"code\"],\"redirect_uris\":[\"https://localhost:5900/signin-oidc\"],\"post_logout_redirect_uris\":[\"https://localhost:5900/signout-callback-oidc\"],\"metadata\":{\"store\":\"ldap\"}}"
+      - "-H"
+      - "Content-Type: application/json"
+      - http://hydra-admin:4445/clients
+    restart: on-failure
+    depends_on:
+      - hydra-admin
+    networks:
+      - intranet
+
+  grpc-ldap:
+    image: gcr.io/csb-anthos/auth/stores/ldap:${GRPC_LDAP_TAG:-latest}
+    ports:
+      - "5500:443"
+    environment:
+      - ENVIRONMENT=development
+      # Make sure that you have defined the LDAP_USERNAME & LDAP_PASSWORD environment variables on your host.
+      #- LDAP_USERNAME=$LDAP_USERNAME
+      #- LDAP_PASSWORD=$LDAP_PASSWORD
+      - LDAP_USERNAME=ldapscsb@csb.nc
+      - LDAP_PASSWORD=Rad69138
+    volumes:
+      - type: bind
+        source: ./grpc/ldap/config.development.yaml
+        target: /app/config.development.yaml
+      - type: bind
+        source: ./certs/tls-localhost.crt
+        target: /etc/ssl/certs/tls.crt
+      - type: bind
+        source: ./certs/tls-localhost.key
+        target: /etc/ssl/certs/tls.key
+    restart: unless-stopped
+    networks:
+      - intranet
+
+  grpc-accounts:
+    image: gcr.io/csb-anthos/auth/stores/accounts:${GRPC_ACCOUNTS_TAG:-latest}
+    ports:
+      - "5600:443"
+    environment:
+      - ENVIRONMENT=development
+    volumes:
+      - type: bind
+        source: ./grpc/accounts/config.development.yaml
+        target: /app/config.development.yaml
+      - type: bind
+        source: ${GRPC_ACCOUNTS_USERS_FILE:-./grpc/accounts/users.json}
+        target: /app/users.json
+      - type: bind
+        source: ./certs/tls-localhost.crt
+        target: /etc/ssl/certs/tls.crt
+      - type: bind
+        source: ./certs/tls-localhost.key
+        target: /etc/ssl/certs/tls.key
+    restart: unless-stopped
+    networks:
+      - intranet
+
+  idp-gateway:
+    image: nginx:1.19.5-alpine
+    ports:
+      - "4400:80"
+      - "4500:443"
+    volumes:
+      - type: bind
+        source: ./nginx/nginx.conf
+        target: /etc/nginx/nginx.conf
+      - type: bind
+        source: ./certs/tls-localhost.crt
+        target: /etc/ssl/certs/tls.crt
+      - type: bind
+        source: ./certs/tls-localhost.key
+        target: /etc/ssl/certs/tls.key
+    restart: unless-stopped
+    depends_on:
+      - hydra-admin
+    networks:
+      - intranet
+
+networks:
+  intranet:

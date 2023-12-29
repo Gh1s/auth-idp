@@ -1,0 +1,27 @@
+# This script can be used to start build the Docker images of the authentication stack.
+
+version: '3.8'
+
+services:
+
+  idp:
+    build:
+      # You can override the build context (where the source code of the IDP is) by defining a BUILD_CONTEXT environment variable.
+      context: ${BUILD_CONTEXT:-../}
+      dockerfile: src/Csb.Auth.Idp/Dockerfile
+      args:
+        # Make sure that you have defined the HTTP_PROXY environment variable on your host.
+        - HTTP_PROXY=$HTTP_PROXY
+        - HTTPS_PROXY=$HTTP_PROXY
+    image: ${REGISTRY:-gcr.io/csb-anthos}/${IDP_REPOSITORY:-auth/idp}:${IDP_TAG:-latest}
+
+  sample-authorization-code-mvc:
+    build:
+      # You can override the build context (where the source code of the samples is) by defining a SAMPLES_BUILD_CONTEXT environment variable.
+      context: ${SAMPLES_BUILD_CONTEXT:-../}
+      dockerfile: samples/Csb.Auth.Samples.AuthorizationCodeMvc/Dockerfile
+      args:
+        # Make sure that you have defined the HTTP_PROXY environment variable on your host.
+        - HTTP_PROXY=$HTTP_PROXY
+        - HTTPS_PROXY=$HTTP_PROXY
+    image: ${REGISTRY:-gcr.io/csb-anthos}/${SAMPLE_AUTHORIZATION_CODE_MVC_REPOSITORY:-auth/samples/authorization-code-mvc}:${SAMPLE_AUTHORIZATION_CODE_MVC_TAG:-latest}

@@ -1,0 +1,66 @@
+log:
+  level: debug
+  leak_sensitive_values: true
+  format: json
+
+serve:
+  cookies:
+    same_site_mode: Lax
+
+webfinger:
+  oidc_discovery:
+    supported_claims:
+      - preferred_username
+      - given_name
+      - family_name
+      - name
+      - picture
+      - email
+      - email_verified
+      - phone_number
+      - phone_number_verified
+    supported_scope:
+      - profile
+      - email
+      - phone_number
+
+oidc:
+  subject_identifiers:
+    supported_types:
+      - public
+    pairwise:
+      salt: this-is-the-dev-salt
+  dynamic_client_registration:
+    default_scope:
+      - openid
+      - offline
+      - offline_access
+
+urls:
+  self:
+    issuer: https://localhost:4500
+  consent: https://localhost:5000/consent
+  login: https://localhost:5000/login
+  logout: https://localhost:5000/logout
+  post_logout_redirect: https://localhost:5000/loggedout
+  error: https://localhost:5000/error
+
+strategies:
+  scope: wildcard
+  access_token: opaque
+
+ttl:
+  login_consent_request: 24h
+  access_token: 1h
+  refresh_token: 168h # 7j
+  id_token: 1h
+  auth_code: 5m
+
+oauth2:
+  expose_internal_errors: true
+  pkce:
+    enforced: true
+
+secrets:
+  system:
+    - this-is-the-dev-secret

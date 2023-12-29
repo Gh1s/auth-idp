@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package auth;
+option csharp_namespace = "Csb.Auth.Users";
+
+message AuthRequest {
+    string Username = 1;
+    string Password = 2;
+}
+
+message AuthResponse {
+    bool Succeeded = 1;
+    int32 Error = 2;
+    string Subject = 3;
+}
+
+enum IdentifierType {
+    SUBJECT = 0;
+    USER_NAME = 1;
+}
+
+message ClaimsRequest {
+    string Identifier = 1;
+    IdentifierType IdentifierType = 2;
+    repeated string Claims = 3;
+}
+
+message ClaimsResponse {
+    bool Succeeded = 1;
+    int32 Error = 2;
+    map<string, string> Claims = 3;
+}
+
+message SearchRequest {
+    string Search = 1;
+    repeated string Claims = 2;
+}
+
+message SearchResponse {
+    bool Succeeded = 1;
+    int32 Error = 2;
+    repeated SearchResponseResult Results = 3;
+}
+
+message SearchResponseResult {
+    map<string, string> Properties = 1;
+}
+
+service User {
+    rpc Authenticate (AuthRequest) returns (AuthResponse) {}
+    rpc FindClaims (ClaimsRequest) returns (ClaimsResponse) {}
+    rpc SearchClaims (SearchRequest) returns (SearchResponse) {}
+}

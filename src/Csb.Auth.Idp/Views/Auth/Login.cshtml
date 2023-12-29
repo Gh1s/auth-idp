@@ -1,0 +1,106 @@
+﻿@model LoginViewModel
+
+@inject IViewLocalizer Localizer
+
+@{
+    ViewData["Title"] = Localizer["PageTitle"];
+}
+
+<style scoped>
+    .input-group > .form-control {
+        color: #343a40 !important;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid #343a40;
+        border-radius: 0 0;
+    }
+
+        .input-group > .form-control::placeholder {
+            color: #343a40;
+        }
+
+        .input-group > .form-control:focus {
+            outline-width: 0 !important;
+            -webkit-appearance: none;
+            box-shadow: none !important;
+            border-color: #7ea62e;
+        }
+
+    .input-group > .input-group-prepend > .input-group-text {
+        width: 25px;
+        padding: 0;
+        background: transparent;
+        border: none;
+    }
+
+        .input-group > .input-group-prepend > .input-group-text > .fa {
+            margin: auto;
+        }
+</style>
+
+<div class="container" style="max-width: 520px;">
+    <img src="~/images/logo_csb.png" class="img-fluid" />
+
+    <h4 class="mb-5">@Localizer["Title"]</h4>
+
+
+    <form id="login-form" asp-action="Login" asp-controller="Auth" method="post">
+
+        <input asp-for="Challenge" type="hidden" />
+        <input asp-for="Store" type="hidden" />
+
+        <div class="form-group">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">
+                        <i class="fa fa-user text-dark"></i>
+                    </div>
+                </div>
+                <input asp-for="Username" class="form-control text-white" placeholder="@Localizer["UsernamePlaceholder"]" />
+            </div>
+            <span asp-validation-for="Username" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">
+                        <i class="fa fa-key text-dark"></i>
+                    </div>
+                </div>
+                <input asp-for="Password" class="form-control text-white" placeholder="@Localizer["PasswordPlaceholder"]" />
+            </div>
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <div class="custom-control custom-checkbox">
+                <input asp-for="RememberMe" class="custom-control-input" />
+                <label asp-for="RememberMe" data-toggle="tooltip" data-placement="bottom" title="@Localizer["RememberMeTooltip"]" class="custom-control-label" style="cursor: help;">
+                    @Localizer["RememberMeText"]
+                </label>
+            </div>
+        </div>
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary text-white w-100">@Localizer["ButtonSignIn"]</button>
+        </div>
+    </form>
+</div>
+<div class="background"></div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+            $('input.form-control').focus((event) => {
+                $(event.target).closest(".input-group").find(".fa").addClass("text-primary").removeClass("text-dark");
+            });
+            $('input.form-control').blur((event) => {
+                $(event.target).closest(".input-group").find(".fa").addClass("text-dark").removeClass("text-primary");
+            });
+            // The autofocus attribute doesn't trigger the focus event.
+            $('#Username').focus();
+        })
+    </script>
+} 

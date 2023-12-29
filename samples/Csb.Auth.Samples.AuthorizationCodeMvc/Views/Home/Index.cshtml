@@ -1,0 +1,28 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome @User.Identity.Name</h1>
+</div>
+
+<div class="text-center mt-3">
+    <ul id="claims" class="text-left">
+        @if (ViewData.TryGetValue("IdToken", out var idToken))
+        {
+            <li>id_token=@idToken</li>
+        }
+        @if (ViewData.TryGetValue("AccessToken", out var accessToken))
+        {
+            <li>access_token=@accessToken</li>
+        }
+        @if (ViewData.TryGetValue("RefreshToken", out var refreshToken))
+        {
+            <li>refresh_token=@refreshToken</li>
+        }
+        @foreach (var claim in User.Claims)
+        {
+            <li>@(claim.Type)=@claim.Value</li>
+        }
+    </ul>
+</div>

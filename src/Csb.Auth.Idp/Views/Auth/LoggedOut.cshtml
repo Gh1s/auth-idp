@@ -1,0 +1,18 @@
+﻿@inject IViewLocalizer Localizer
+
+@{
+    ViewData["Title"] = Localizer["PageTitle"];
+}
+
+<div class="container p-3" style="max-width: 520px;">
+    <div class="text-center">
+        <img src="~/images/logo_csb.png" class="img-fluid" />
+    </div>
+    <h4>@Localizer["Title"]</h4>
+
+    <hr />
+
+    <p>@Localizer["Text"]</p>
+
+</div>
+<div class="background"></div>
