@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sample-authorization-code-mvc.fullname" . }}-config
+  labels:
+    {{- include "sample-authorization-code-mvc.labels" . | nindent 4 }}
+data:
+  appsettings.{{ .Values.environment }}.json: |
+    {
+      "Serilog": {
+        "MinimumLevel": {
+          "Default": "{{ .Values.logLevel }}"
+        }
+      },
+      "PathBase": "{{ .Values.ingress.pathBase }}",
+      "Authentication": {
+        "Authority": "{{ .Values.auth.authority }}",
+        "RequireHttpsMetadata": {{ .Values.auth.requireHttpsMetadata }},
+        "ResponseType": "{{ .Values.auth.responseType }}",
+        "SaveTokens": {{ .Values.auth.saveTokens }},
+        "GetClaimsFromUserInfoEndpoint": {{ .Values.auth.getClaimsFromUserInfoEndpoint }},
+        "Scope": {{ .Values.auth.scopes | toJson }}
+      }
+    }

@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "idp.fullname" . }}
+  labels:
+    {{- include "idp.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "idp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "idp.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "idp.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ .Values.environment }}
+            - name: ASPNETCORE_URLS
+              value: http://+
+            - name: ConnectionStrings__DataProtectionKeyContext
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dataProtection.secret.name }}
+                  key: {{ .Values.dataProtection.secret.fields.cstr }}
+            - name: DataProtection__CertificatePassword
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dataProtection.secret.name }}
+                  key: {{ .Values.dataProtection.secret.fields.pass }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/appsettings.{{ .Values.environment }}.json
+              subPath: appsettings.{{ .Values.environment }}.json
+            - name: dataprotection-cert
+              mountPath: {{ .Values.dataProtection.certificatePath }}
+              subPath: {{ .Values.dataProtection.secret.fields.pfx }}
+            {{- if .Values.grpc.ldap.enabled }}
+            - name: grpc-ldap-cert
+              mountPath: /etc/ssl/certs/grpc-ldap-tls.crt
+              subPath: tls.crt
+            {{- end }}
+            {{- if .Values.grpc.accounts.enabled }}
+            - name: grpc-accounts-cert
+              mountPath: /etc/ssl/certs/grpc-accounts-tls.crt
+              subPath: tls.crt
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "idp.fullname" . }}-config
+            items:
+              - key: appsettings.{{ .Values.environment }}.json
+                path: appsettings.{{ .Values.environment }}.json
+        - name: dataprotection-cert
+          secret:
+            secretName: {{ .Values.dataProtection.secret.name }}
+            items:
+              - key: {{ .Values.dataProtection.secret.fields.pfx }}
+                path: {{ .Values.dataProtection.secret.fields.pfx }}
+        {{- if .Values.grpc.ldap.enabled }}
+        - name: grpc-ldap-cert
+          secret:
+            secretName: {{ .Values.grpc.ldap.secret }}
+            items:
+              - key: tls.crt
+                path: tls.crt
+        {{- end }}
+        {{- if .Values.grpc.accounts.enabled }}
+        - name: grpc-accounts-cert
+          secret:
+            secretName: {{ .Values.grpc.accounts.secret }}
+            items:
+              - key: tls.crt
+                path: tls.crt
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

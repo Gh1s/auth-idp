@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sample-authorization-code-mvc.fullname" . }}
+  labels:
+    {{- include "sample-authorization-code-mvc.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sample-authorization-code-mvc.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "sample-authorization-code-mvc.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "sample-authorization-code-mvc.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ .Values.environment }}
+            - name: ASPNETCORE_URLS
+              value: http://+
+            - name: Authentication__ClientId
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.secret.name }}
+                  key: {{ .Values.auth.secret.fields.clientId }}
+            - name: Authentication__ClientSecret
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.secret.name }}
+                  key: {{ .Values.auth.secret.fields.clientSecret }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/appsettings.{{ .Values.environment }}.json
+              subPath: appsettings.{{ .Values.environment }}.json
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "sample-authorization-code-mvc.fullname" . }}-config
+            items:
+              - key: appsettings.{{ .Values.environment }}.json
+                path: appsettings.{{ .Values.environment }}.json
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

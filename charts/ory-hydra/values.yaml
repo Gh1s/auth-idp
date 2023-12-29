@@ -1,0 +1,144 @@
+replicaCount: 2
+
+image:
+  repository: oryd/hydra
+  tag: v1.9.2
+  pullPolicy: IfNotPresent
+
+nameOverride: "hydra"
+fullnameOverride: "hydra"
+
+service:
+  public:
+    enabled: true
+    type: ClusterIP
+    port: 4444
+    annotations: {}
+    labels: {}
+  admin:
+    enabled: true
+    type: ClusterIP
+    port: 4445
+    annotations: {}
+    labels: {}
+
+ingress:
+  public:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: connect.csb.nc
+        paths:
+          - path: /.well-known
+            pathType: Prefix
+          - path: /oauth2/auth
+            pathType: Prefix
+          - path: /oauth2/revoke
+            pathType: Prefix
+          - path: /oauth2/sessions/logout
+            pathType: Prefix
+          - path: /oauth2/token
+            pathType: Prefix
+          - path: /userinfo
+            pathType: Prefix
+    tls:
+      - secretName: idp-tls
+        hosts:
+          - connect.csb.nc
+  admin:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: connect.csb.nc
+        paths:
+          - path: /oauth2/introspect
+            pathType: Prefix
+    tls:
+      - secretName: idp-tls
+        hosts:
+          - connect.csb.nc
+
+hydra:
+  config:
+    log:
+      level: info
+      format: text
+      leak_sensitive_values: false
+    serve:
+      public:
+        port: 4444
+      admin:
+        port: 4445
+      cookies:
+        same_site_mode: Lax
+    webfinger:
+      oidc_discovery:
+        supported_claims:
+          - preferred_username
+          - given_name
+          - family_name
+          - name
+          - picture
+          - email
+          - email_verified
+          - phone_number
+          - phone_number_verified
+        supported_scope:
+          - profile
+          - email
+          - phone_number
+    oidc:
+      subject_identifiers:
+        supported_types:
+          - public
+      dynamic_client_registration:
+        default_scope:
+          - openid
+          - offline
+          - offline_access
+    urls:
+      self:
+        issuer: https://connect.csb.nc
+      consent: https://connect.csb.nc/consent
+      login: https://connect.csb.nc/login
+      logout: https://connect.csb.nc/logout
+      post_logout_redirect: https://connect.csb.nc/loggedout
+      error: https://connect.csb.nc/error
+    strategies:
+      scope: wildcard
+      access_token: opaque
+    ttl:
+      login_consent_request: 24h
+      access_token: 1h
+      refresh_token: 168h # 7j
+      id_token: 1h
+      auth_code: 5m
+    oauth2:
+      expose_internal_errors: false
+      pkce:
+        enforced: true
+  existingSecret: hydra-secrets
+  autoMigrate: true
+  dangerousForceHttp: true
+
+deployment:
+  annotations:
+    reloader.stakater.com/auto: "true"
+  resources:
+   limits:
+     cpu: 1
+     memory: 512Mi
+   requests:
+     cpu: 10m
+     memory: 64Mi
+
+maester:
+  enabled: true
+  hydraFullnameOverride: hydra
+hydra-maester:
+  adminService:
+    name: hydra

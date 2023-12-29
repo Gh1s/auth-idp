@@ -1,0 +1,131 @@
+environment: "Production"
+logLevel: "Information"
+replicaCount: 2
+
+image:
+  repository: gcr.io/csb-anthos/auth/idp
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  # tag: "latest"
+
+imagePullSecrets: []
+nameOverride: "idp"
+fullnameOverride: "idp"
+
+dataProtection:
+  secret:
+    name: "idp-dataprotection"
+    fields:
+      cstr: data-protection.cstr
+      pfx: data-protection.pfx
+      pass: data-protection.pass
+  certificatePath: "/app/data-protection.pfx"
+
+hydra:
+  publicApi:
+    url: "http://hydra-public:4444"
+    bypassCertificateValidation: false
+  adminApi:
+    url: "http://hydra-admin:4445"
+    apiKey: ""
+    bypassCertificateValidation: false
+
+grpc:
+  ldap:
+    enabled: true
+    address: "https://grpc-ldap"
+    secret: "grpc-ldap-tls"
+  accounts:
+    enabled: true
+    address: "https://grpc-accounts"
+    secret: "grpc-accounts-tls"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "idp"
+
+podAnnotations:
+  reloader.stakater.com/auto: "true"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: connect.csb.nc
+      paths:
+        - path: /login
+          pathType: Prefix
+        - path: /logout
+          pathType: Prefix
+        - path: /loggedout
+          pathType: Prefix
+        - path: /consent
+          pathType: Prefix
+        - path: /error
+          pathType: Prefix
+        - path: /lib
+          pathType: Prefix
+        - path: /js
+          pathType: Prefix
+        - path: /css
+          pathType: Prefix
+        - path: /images
+          pathType: Prefix
+        - path: /images
+          pathType: Prefix
+        - path: /favicon.ico
+          pathType: Exact
+  tls:
+   - secretName: idp-tls
+     hosts:
+       - connect.csb.nc
+
+resources:
+  limits:
+    cpu: 1
+    memory: 1Gi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+livenessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 5
+  timeoutSeconds: 5
+readinessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 5
+  timeoutSeconds: 5
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

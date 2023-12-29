@@ -1,0 +1,93 @@
+environment: "Production"
+logLevel: "Information"
+replicaCount: 1
+
+image:
+  repository: gcr.io/csb-anthos/auth/samples/authorization-code-mvc
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  # tag: "latest"
+
+imagePullSecrets: []
+nameOverride: "sample-authorization-code-mvc"
+fullnameOverride: "sample-authorization-code-mvc"
+
+auth:
+  secret:
+    name: samples-authorization-code-mvc-oauth2-client
+    fields:
+      clientId: "clientId"
+      clientSecret: "clientSecret"
+  authority: "https://connect.csb.nc"
+  requireHttpsMetadata: "true"
+  responseType: "code"
+  saveTokens: "true"
+  getClaimsFromUserInfoEndpoint: "true"
+  scopes:
+    - openid
+    - profile
+    - email
+    - phone_number
+    - offline_access
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "sample-authorization-code-mvc"
+
+podAnnotations:
+  reloader.stakater.com/auto: "true"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  pathBase: /samples/authorization-code-mvc
+  hosts:
+    - host: connect.csb.nc
+      paths:
+        - path: /samples/authorization-code-mvc
+          pathType: Prefix
+  tls:
+   - secretName: idp-tls
+     hosts:
+       - connect.csb.nc
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+livenessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 5
+readinessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 5
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
